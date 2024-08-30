@@ -1,7 +1,7 @@
 use std::cmp::min;
 use std::fmt::{format, Debug};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Token {
     EOF,
     ILLEGAL { literal: String },
@@ -118,19 +118,23 @@ impl Lexer {
         }
     }
 
-    fn read_char(&mut self) -> Option<&char> {
+    fn read_char(&mut self) -> Option<char> {
         let cursor = self.cursor;
 
         if cursor >= self.input.len() {
             None
         } else {
             self.cursor += 1;
-            Some(&self.input[cursor])
+            Some(self.input[cursor])
         }
     }
 
-    fn peek_char(&self) {
-
+    fn peek_char(&self) -> Option<char> {
+        if self.cursor < self.input.len() {
+            Some(self.input[self.cursor])
+        } else {
+            None
+        }
     }
 
     fn eat_whitespace(&mut self) {
@@ -153,21 +157,28 @@ impl Lexer {
     fn next_token(&mut self) -> Option<Result<Token, String>> {
         self.eat_whitespace();
 
-        let char: &char = match self.read_char() {
+        let char: char = match self.read_char() {
             Some(c) => c,
             None => return None,
         };
 
         let new_token: Option<Result<Token, String>> = match char {
             '=' => {
-                // Needs EQ
-                Some(Ok(Token::ASSIGN))
+                if self.peek_char() == Some('=') {
+                    self.read_char();
+                    Some(Ok(Token::EQ))
+                } else {
+                    Some(Ok(Token::ASSIGN))
+                }
             }
             '+' => Some(Ok(Token::PLUS)),
             '-' => Some(Ok(Token::MINUS)),
             '!' => {
-                // Needs NEQ
-                Some(Ok(Token::BANG))
+                if self.peek_char() == Some('=') {
+                    Some(Ok(Token::NOTEQ))
+                } else {
+                    Some(Ok(Token::BANG))
+                }
             }
             '*' => Some(Ok(Token::ASTERISK)),
             '/' => Some(Ok(Token::FSLASH)),
@@ -214,9 +225,38 @@ impl Iterator for Lexer {
 }
 
 fn main() {
-    let l = Lexer::new("< > []{ } + = - /\\,* \n letreturn let return ");
+    let l = Lexer::new("< > []{ } + = - == != === =!== /\\,* \n =letreturn let return ");
 
     for tok in l {
         println!("{:?}", tok);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn run_test(lexer_input: String, expected_output: Vec<Token>) {
+        let test_lexer: Lexer = Lexer::new(&lexer_input);
+
+        for (index, token) in test_lexer.enumerate() {
+            match token {
+                Ok(t) => assert_eq!(t, expected_output[index]),
+                Err(e) => panic!("{}", e),
+            };
+
+        }
+    }
+
+    #[test]
+    fn single_char_basic() {
+        let s: String = String::from("< > [ ] { } ( ) = + - * / \\ % ! , \n");
+        let result: Vec<Token> = vec![
+            Token::LT, Token::GT, Token::LBRACKET, Token::RBRACKET, 
+            Token::LBRACE, Token::RBRACE, Token::LPAREN, Token::RPAREN,
+            Token::ASSIGN, Token::PLUS, Token::MINUS, Token::ASTERISK, 
+            Token::FSLASH, Token::BSLASH, Token::MOD, Token::BANG,
+            Token::COMMA, Token::LINEFEED];
+        
+        run_test(s, result);
     }
 }
