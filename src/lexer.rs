@@ -258,23 +258,21 @@ impl Lexer {
             ']' => Some(Ok(Token::RBRACKET)),
 
             other => {
-                if char.is_alphabetic() { // Identifier or Keyword
+                if char.is_alphabetic() {
+                    // Identifier or Keyword
                     let end_char = self.seek_predicate(|ch| Lexer::is_whitespace(ch) || ch == '\n');
                     self.cursor -= 1;
                     let literal = self.read_slice(end_char);
 
                     match Token::keyword_to_token(&literal) {
                         None => Some(Ok(Token::IDENT { literal: literal })),
-                        Some(token) => {
-                            Some(Ok(token))
-                        }
+                        Some(token) => Some(Ok(token)),
                     }
-
                 } else if char.is_numeric() || char == '.' {
                     self.cursor -= 1;
                     let end_char = self.seek_predicate(|ch| Lexer::is_whitespace(ch) || ch == '\n');
                     let literal = self.read_slice(end_char);
-                    
+
                     if let Ok(int) = literal.parse::<i64>() {
                         Some(Ok(Token::INT { literal: int }))
                     } else if let Ok(flt) = literal.parse::<f64>() {
@@ -285,7 +283,7 @@ impl Lexer {
                 } else {
                     Some(Err(other.to_string()))
                 }
-            },
+            }
         };
 
         new_token
@@ -325,12 +323,26 @@ mod lexer_tests {
     fn single_char_basic() {
         let s: String = String::from("< > [ ] { } ( ) = + - * / \\ % ! , \n");
         let result: Vec<Token> = vec![
-            Token::LT, Token::GT, Token::LBRACKET, Token::RBRACKET, 
-            Token::LBRACE, Token::RBRACE, Token::LPAREN, Token::RPAREN,
-            Token::ASSIGN, Token::PLUS, Token::MINUS, Token::ASTERISK, 
-            Token::FSLASH, Token::BSLASH, Token::MOD, Token::BANG,
-            Token::COMMA, Token::LINEFEED];
-        
+            Token::LT,
+            Token::GT,
+            Token::LBRACKET,
+            Token::RBRACKET,
+            Token::LBRACE,
+            Token::RBRACE,
+            Token::LPAREN,
+            Token::RPAREN,
+            Token::ASSIGN,
+            Token::PLUS,
+            Token::MINUS,
+            Token::ASTERISK,
+            Token::FSLASH,
+            Token::BSLASH,
+            Token::MOD,
+            Token::BANG,
+            Token::COMMA,
+            Token::LINEFEED,
+        ];
+
         run_test(s, result);
     }
 
@@ -338,8 +350,15 @@ mod lexer_tests {
     fn two_char_tokens() {
         let s: String = String::from("<= >= == != < = > !");
         let result: Vec<Token> = vec![
-            Token::LTEQ, Token::GTEQ, Token::EQ, Token::NOTEQ, 
-            Token::LT, Token::ASSIGN, Token::GT, Token::BANG];
+            Token::LTEQ,
+            Token::GTEQ,
+            Token::EQ,
+            Token::NOTEQ,
+            Token::LT,
+            Token::ASSIGN,
+            Token::GT,
+            Token::BANG,
+        ];
 
         run_test(s, result);
     }
@@ -348,12 +367,21 @@ mod lexer_tests {
     fn identifiers() {
         let s: String = String::from("test identifier < blah\nblah");
         let result: Vec<Token> = vec![
-            Token::IDENT { literal: "test".to_string() },
-            Token::IDENT { literal: "identifier".to_string() },
+            Token::IDENT {
+                literal: "test".to_string(),
+            },
+            Token::IDENT {
+                literal: "identifier".to_string(),
+            },
             Token::LT,
-            Token::IDENT { literal: "blah".to_string() },
+            Token::IDENT {
+                literal: "blah".to_string(),
+            },
             Token::LINEFEED,
-            Token::IDENT { literal: "blah".to_string() }];
+            Token::IDENT {
+                literal: "blah".to_string(),
+            },
+        ];
 
         run_test(s, result);
     }
@@ -362,9 +390,18 @@ mod lexer_tests {
     fn keywords() {
         let s: String = String::from("\nfn\nlet type true false if else\nreturn");
         let result: Vec<Token> = vec![
-            Token::LINEFEED, Token::FUNCTION, Token::LINEFEED,
-            Token::LET, Token::TYPE, Token::TRUE, Token::FALSE,
-            Token::IF, Token::ELSE, Token::LINEFEED, Token::RETURN];
+            Token::LINEFEED,
+            Token::FUNCTION,
+            Token::LINEFEED,
+            Token::LET,
+            Token::TYPE,
+            Token::TRUE,
+            Token::FALSE,
+            Token::IF,
+            Token::ELSE,
+            Token::LINEFEED,
+            Token::RETURN,
+        ];
 
         run_test(s, result);
     }
@@ -373,11 +410,19 @@ mod lexer_tests {
     fn identifiers_and_keywords() {
         let s: String = String::from("test fn type identifier let blahtrueblah");
         let result: Vec<Token> = vec![
-            Token::IDENT { literal: "test".to_string() },
-            Token::FUNCTION, Token::TYPE,
-            Token::IDENT { literal: "identifier".to_string() },
+            Token::IDENT {
+                literal: "test".to_string(),
+            },
+            Token::FUNCTION,
+            Token::TYPE,
+            Token::IDENT {
+                literal: "identifier".to_string(),
+            },
             Token::LET,
-            Token::IDENT { literal: "blahtrueblah".to_string() }];
+            Token::IDENT {
+                literal: "blahtrueblah".to_string(),
+            },
+        ];
 
         run_test(s, result);
     }
@@ -386,11 +431,20 @@ mod lexer_tests {
     fn strings() {
         let s: String = String::from("\"test test\" ident fn \"str\" \"str fn type true false");
         let result: Vec<Token> = vec![
-            Token::STRING { literal: "test test".to_string() },
-            Token::IDENT { literal: "ident".to_string() },
+            Token::STRING {
+                literal: "test test".to_string(),
+            },
+            Token::IDENT {
+                literal: "ident".to_string(),
+            },
             Token::FUNCTION,
-            Token::STRING { literal: "str".to_string() },
-            Token::STRING { literal: "str fn type true false".to_string() }];
+            Token::STRING {
+                literal: "str".to_string(),
+            },
+            Token::STRING {
+                literal: "str fn type true false".to_string(),
+            },
+        ];
 
         run_test(s, result);
     }
@@ -399,11 +453,19 @@ mod lexer_tests {
     fn integers() {
         let s: String = String::from("test fn type identifier let blahtrueblah");
         let result: Vec<Token> = vec![
-            Token::IDENT { literal: "test".to_string() },
-            Token::FUNCTION, Token::TYPE,
-            Token::IDENT { literal: "identifier".to_string() },
+            Token::IDENT {
+                literal: "test".to_string(),
+            },
+            Token::FUNCTION,
+            Token::TYPE,
+            Token::IDENT {
+                literal: "identifier".to_string(),
+            },
             Token::LET,
-            Token::IDENT { literal: "blahtrueblah".to_string() }];
+            Token::IDENT {
+                literal: "blahtrueblah".to_string(),
+            },
+        ];
 
         run_test(s, result);
     }
@@ -416,7 +478,8 @@ mod lexer_tests {
             Ok(Token::INT { literal: 2 }),
             Ok(Token::FLOAT { literal: 3.14 }),
             Err("123.123.32".to_string()),
-            Ok(Token::FLOAT { literal: 0.12 })];
+            Ok(Token::FLOAT { literal: 0.12 }),
+        ];
 
         run_test_with_err(s, result);
     }
